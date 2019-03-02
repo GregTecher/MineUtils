@@ -1,5 +1,6 @@
 package cn.omsfuk.mod.mineutils.tileentity;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.capabilities.Capability;
@@ -10,27 +11,31 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.FluidTankProperties;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidTankProperties;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import javax.annotation.Nullable;
 
 
 public class CreativeFluidTileEntity extends TileEntity implements IFluidHandler {
 
-    private final Fluid fluidType;
+    private Fluid fluidType;
 
-    private final FluidStack FILLED_FLUID;
+    private FluidStack filledFluid;
 
-    private final FluidTankProperties[] FLUID_TANK_PROPERTIES;
+    private FluidTankProperties[] fluidTankProperties;
 
     public CreativeFluidTileEntity() {
-        this(FluidRegistry.WATER);
     }
 
     public CreativeFluidTileEntity(Fluid fluid) {
+        init(fluid);
+    }
+
+    private void init(Fluid fluid) {
         fluidType = fluid;
-        FILLED_FLUID = new FluidStack(fluid, Integer.MAX_VALUE);
-        FLUID_TANK_PROPERTIES = new FluidTankProperties[]{
-                new FluidTankProperties(FILLED_FLUID, Integer.MAX_VALUE, false, true)
+        filledFluid = new FluidStack(fluid, Integer.MAX_VALUE);
+        fluidTankProperties = new FluidTankProperties[]{
+                new FluidTankProperties(filledFluid, Integer.MAX_VALUE, false, true)
         };
     }
 
@@ -55,7 +60,7 @@ public class CreativeFluidTileEntity extends TileEntity implements IFluidHandler
 
     @Override
     public IFluidTankProperties[] getTankProperties() {
-        return FLUID_TANK_PROPERTIES;
+        return fluidTankProperties;
     }
 
     @Override
@@ -76,5 +81,21 @@ public class CreativeFluidTileEntity extends TileEntity implements IFluidHandler
     @Override
     public FluidStack drain(int maxDrain, boolean doDrain) {
         return new FluidStack(fluidType, maxDrain);
+    }
+
+    @Override
+    public void readFromNBT(NBTTagCompound compound) {
+        super.readFromNBT(compound);
+        if (compound.hasKey("fluid")) {
+            init(FluidRegistry.getFluid(compound.getString("fluid")));
+        }
+    }
+
+    @Override
+    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+        if (fluidType != null) {
+            compound.setString("fluid", fluidType.getName());
+        }
+        return super.writeToNBT(compound);
     }
 }
